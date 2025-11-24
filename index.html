@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deployment Environment Management</title>
+    <style>
+      :root {
+        --bg-light: #f8fafc;
+        --primary: #0014dc;
+        --primary-glow: 0 0 15px rgba(0, 20, 220, 0.25);
+        --text-dark: #1e293b;
+        --card-bg: #ffffff;
+        --sidebar-bg: #f1f5f9;
+        --border-radius: 16px;
+        --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        --dev-color: #1d4ed8;
+        --qa-color: #c2410c;
+        --prod-color: #b91c1c;
+        --success-color: #16a34a;
+        --warning-color: #d97706;
+        --danger-color: #dc2626;
+        --grid-gap: 1.8rem;
+        --border-color: #e2e8f0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg-light);
+        color: var(--text-dark);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .logo {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        letter-spacing: -0.5px;
+      }
+
+      .logo-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), #4a40f0);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .logo-icon svg {
+        fill: white;
+      }
+
+      .user-info {
+        background: #f1f5f9;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+      }
+
+      .user-info:hover {
+        background: #e2e8f0;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .user-info span {
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+
+      .user-icon {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, var(--primary), #4a40f0);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: white;
+      }
+
+      .breadcrumb {
+        display: flex;
+        gap: 16px;
+        font-size: 1.15rem;
+        margin-bottom: 1.8rem;
+        padding: 0.9rem 1.8rem;
+        background: #f8fafc;
+        border-radius: var(--border-radius);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        align-items: center;
+        border: 1px solid var(--border-color);
+      }
+
+      .breadcrumb span {
+        cursor: pointer;
+        transition: var(--transition);
+        padding: 5px 10px;
+        border-radius: 8px;
+        position: relative;
+        z-index: 1;
+        font-weight: 500;
+        color: #64748b;
+      }
+
+      .breadcrumb span:hover {
+        color: var(--primary);
+        background: rgba(0, 20, 220, 0.05);
+      }
+
+      .breadcrumb span:after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary);
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.3s ease;
+        z-index: -1;
+      }
+
+      .breadcrumb span:hover:after {
+        transform: scaleX(1);
+        transform-origin: left;
+      }
+
+      .breadcrumb .separator {
+        color: #cbd5e1;
+        font-size: 1.3rem;
+        margin: 0 -4px;
+      }
+
+      .view {
+        opacity: 0;
+        transform: translateY(25px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+        pointer-events: none;
+        height: 100%;
+      }
+
+      .view.active {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: all;
+      }
+
+      .category-filter {
+        display: flex;
+        gap: var(--grid-gap);
+        margin-bottom: 1.8rem;
+        flex-wrap: wrap;
+        background: #f8fafc;
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+      }
+
+      .filter-btn {
+        background: #f1f5f9;
+        border: 1px solid var(--border-color);
+        color: #64748b;
+        padding: 0.7rem 1.4rem;
+        border-radius: 32px;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .filter-btn:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .filter-btn.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 20, 220, 0.1);
+      }
+
+      .filter-btn.dev {
+        border-color: var(--dev-color);
+        color: var(--dev-color);
+      }
+      .filter-btn.dev.active {
+        background: var(--dev-color);
+      }
+      .filter-btn.qa {
+        border-color: var(--qa-color);
+        color: var(--qa-color);
+      }
+      .filter-btn.qa.active {
+        background: var(--qa-color);
+      }
+      .filter-btn.prod {
+        border-color: var(--prod-color);
+        color: var(--prod-color);
+      }
+      .filter-btn.prod.active {
+        background: var(--prod-color);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: var(--grid-gap);
+      }
+
+      .card {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: var(--transition);
+        position: relative;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        transform-style: preserve-3d;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 15px rgba(0, 20, 220, 0.1), var(--primary-glow);
+        border-color: var(--primary);
+        z-index: 10;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), transparent);
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .env-badge {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: var(--dev-color);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 24px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        z-index: 2;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-weight: 600;
+      }
+
+      .card.dev .env-badge {
+        background: linear-gradient(135deg, var(--dev-color), #1e40af);
+      }
+      .card.qa .env-badge {
+        background: linear-gradient(135deg, var(--qa-color), #c2410c);
+      }
+      .card.prod .env-badge {
+        background: linear-gradient(135deg, var(--prod-color), #b91c1c);
+      }
+
+      .card-header {
+        padding: 1.6rem;
+        background: rgba(0, 20, 220, 0.03);
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-dark);
+      }
+
+      .card-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), #4a40f0);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0, 20, 220, 0.15);
+      }
+
+      .card-icon img {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
+      }
+
+      .card-body {
+        padding: 1.6rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .card-description {
+        color: #64748b;
+        line-height: 1.6;
+        min-height: 70px;
+        flex-grow: 1;
+        font-size: 1.05rem;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #4ade80;
+        margin-right: 10px;
+        box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+      }
+
+      .env-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 24px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .status-active {
+        background: rgba(22, 163, 74, 0.1);
+        color: var(--success-color);
+      }
+
+      .status-warning {
+        background: rgba(217, 119, 6, 0.1);
+        color: var(--warning-color);
+      }
+
+      .status-critical {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--danger-color);
+      }
+
+      .service-count {
+        background: rgba(0, 20, 220, 0.05);
+        color: var(--primary);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+      }
+
+      .table-container {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 600px;
+      }
+
+      th {
+        background: rgba(0, 20, 220, 0.05);
+        padding: 1.4rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.95rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      td {
+        padding: 1.3rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: var(--transition);
+        vertical-align: middle;
+      }
+
+      tr:hover td {
+        background: rgba(0, 20, 220, 0.03);
+      }
+
+      .service-link {
+        color: var(--primary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: var(--transition);
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .service-link:hover {
+        text-shadow: var(--primary-glow);
+        transform: translateX(4px);
+      }
+
+      .service-link::after {
+        content: "→";
+        opacity: 0;
+        transition: var(--transition);
+        margin-left: 4px;
+      }
+
+      .service-link:hover::after {
+        opacity: 1;
+        transform: translateX(3px);
+      }
+
+      .back-btn {
+        background: #f1f5f9;
+        color: var(--text-dark);
+        border: 1px solid var(--border-color);
+        padding: 0.9rem 1.6rem;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: var(--transition);
+        margin-bottom: 1.8rem;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .back-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+        box-shadow: var(--primary-glow), 0 4px 6px rgba(0, 20, 220, 0.1);
+        transform: translateY(-3px);
+      }
+
+      .loading {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 300px;
+        gap: 1.5rem;
+      }
+
+      .loader {
+        width: 60px;
+        height: 60px;
+        border: 6px solid rgba(0, 20, 220, 0.1);
+        border-top: 6px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        color: #64748b;
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+
+      .scope-tag {
+        display: inline-block;
+        background: rgba(0, 20, 220, 0.05);
+        color: var(--primary);
+        padding: 5px 14px;
+        border-radius: 24px;
+        font-size: 0.9rem;
+        margin: 5px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .scope-tag:hover {
+        background: var(--primary);
+        color: white;
+        transform: scale(1.08);
+        box-shadow: 0 4px 6px rgba(0, 20, 220, 0.1);
+      }
+
+      .scope-tag::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -60%;
+        width: 24px;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.25);
+        transform: rotate(30deg);
+        transition: 0.6s;
+      }
+
+      .scope-tag:hover::after {
+        left: 120%;
+      }
+
+      .highlight {
+        background: rgba(0, 20, 220, 0.05);
+        box-shadow: 0 0 0 3px rgba(0, 20, 220, 0.2);
+      }
+
+      .tool-header {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 1.8rem;
+      }
+
+      .tool-icon-large {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, var(--primary), #4a40f0);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 6px rgba(0, 20, 220, 0.1);
+      }
+
+      .tool-icon-large img {
+        width: 36px;
+        height: 36px;
+        filter: brightness(0) invert(1);
+      }
+
+      .tool-info h1 {
+        font-size: 2.4rem;
+        margin-bottom: 0.6rem;
+        color: var(--text-dark);
+        font-weight: 700;
+      }
+
+      .tool-info p {
+        color: #64748b;
+        font-size: 1.15rem;
+        max-width: 600px;
+      }
+
+      /* Tool Detail View with Sidebar */
+      .tool-detail-container {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: var(--grid-gap);
+        height: calc(100vh - 220px);
+      }
+
+      .scopes-sidebar {
+        background: var(--sidebar-bg);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        border: 1px solid var(--border-color);
+      }
+
+      .scopes-header {
+        padding: 1.4rem;
+        background: rgba(0, 20, 220, 0.03);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .scopes-header h2 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text-dark);
+      }
+
+      .scopes-search {
+        padding: 1rem 1.2rem;
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .scopes-search input {
+        width: 100%;
+        background: white;
+        border: 1px solid var(--border-color);
+        padding: 0.7rem 1.2rem;
+        border-radius: 24px;
+        color: var(--text-dark);
+        outline: none;
+        transition: var(--transition);
+        font-size: 0.95rem;
+      }
+
+      .scopes-search input:focus {
+        background: #f8fafc;
+        box-shadow: 0 0 0 2px var(--primary);
+        border-color: var(--primary);
+      }
+
+      .scopes-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.8rem 0;
+      }
+
+      .scope-item {
+        padding: 1rem 1.3rem;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-left: 4px solid transparent;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scope-item:hover {
+        background: rgba(0, 20, 220, 0.03);
+        z-index: 2;
+      }
+
+      .scope-item.active {
+        background: rgba(0, 20, 220, 0.08);
+        border-left: 4px solid var(--primary);
+        color: var(--primary);
+        font-weight: 500;
+        z-index: 3;
+      }
+
+      .scope-item::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 20, 220, 0.03));
+        transform: translateX(-100%);
+        transition: transform 0.4s ease;
+      }
+
+      .scope-item:hover::after {
+        transform: translateX(100%);
+      }
+
+      .scope-icon {
+        width: 28px;
+        height: 28px;
+        background: rgba(0, 20, 220, 0.08);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .scope-icon svg {
+        width: 16px;
+        height: 16px;
+        fill: var(--primary);
+      }
+
+      .scope-details {
+        flex: 1;
+      }
+
+      .scope-name {
+        font-weight: 500;
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+        color: var(--text-dark);
+      }
+
+      .scope-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-top: 4px;
+      }
+
+      .scope-count {
+        background: rgba(0, 20, 220, 0.08);
+        color: var(--primary);
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .mappings-content {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+      }
+
+      .mappings-header {
+        padding: 1.4rem;
+        background: rgba(0, 20, 220, 0.03);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .mappings-header h2 {
+        font-size: 1.6rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-dark);
+      }
+
+      .mappings-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .action-btn {
+        background: rgba(0, 20, 220, 0.05);
+        color: var(--primary);
+        border: 1px solid rgba(0, 20, 220, 0.15);
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .action-btn:hover {
+        background: rgba(0, 20, 220, 0.1);
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .no-scope-selected {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        padding: 2.5rem;
+        color: #64748b;
+        text-align: center;
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .no-scope-selected svg {
+        width: 80px;
+        height: 80px;
+        opacity: 0.2;
+        margin-bottom: 1.8rem;
+        fill: var(--primary);
+      }
+
+      .no-scope-selected h3 {
+        color: #94a3b8;
+        margin-bottom: 0.7rem;
+        font-size: 1.6rem;
+        font-weight: 600;
+      }
+
+      .no-scope-selected p {
+        max-width: 400px;
+        line-height: 1.6;
+        color: #94a3b8;
+      }
+
+      .scroll-container {
+        flex: 1;
+        overflow: auto;
+        padding: 0 1rem 1rem 0;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        padding-bottom: 1rem;
+        min-height: 300px;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2.2rem 0;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin-top: 2.5rem;
+        border-top: 1px solid var(--border-color);
+        font-weight: 500;
+      }
+
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: rgba(0, 20, 220, 0.15);
+        border-radius: 5px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+      }
+
+      @media (max-width: 1200px) {
+        .tool-detail-container {
+          grid-template-columns: 280px 1fr;
+        }
+      }
+
+      @media (max-width: 1024px) {
+        .tool-detail-container {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+
+        .scopes-sidebar {
+          max-height: 320px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        :root {
+          --border-radius: 12px;
+          --grid-gap: 1.4rem;
+        }
+
+        .container {
+          padding: 1.2rem;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1.2rem;
+        }
+
+        .category-filter {
+          flex-direction: column;
+        }
+
+        .tool-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1.2rem;
+        }
+
+        .tool-detail-container {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+
+        .back-btn {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .mappings-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
+        .mappings-actions {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">
+          <div class="logo-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              fill="white"
+              viewBox="0 0 16 16"
+            >
+              <path
+                d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"
+              />
+              <path
+                d="M4.5 5.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zm0 2a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 2a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 2a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"
+              />
+            </svg>
+          </div>
+          DEPLOYMENT ENVIRONMENT MANAGER
+        </div>
+        <div class="user-info">
+          <div class="user-icon">A</div>
+          <span>admin@company.com</span>
+        </div>
+      </header>
+
+      <div class="breadcrumb" id="breadcrumb">
+        <span data-view="environments">ENVIRONMENTS</span>
+        <span class="separator">/</span>
+        <span id="breadcrumb-env" style="display: none">ENV1</span>
+        <span class="separator" style="display: none" id="sep1">/</span>
+        <span id="breadcrumb-tool" style="display: none">SWAGGER</span>
+        <span class="separator" style="display: none" id="sep2">/</span>
+        <span id="breadcrumb-scope" style="display: none">SCOPE1</span>
+      </div>
+
+      <button class="back-btn" id="back-btn" style="display: none">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          fill="currentColor"
+          viewBox="0 0 16 16"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M12 8a.5.5 0 0 1-.5.5H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5a.5.5 0 0 1 .5.5z"
+          />
+        </svg>
+        Back to Tools
+      </button>
+
+      <!-- Environments View -->
+      <div id="environments-view" class="view active">
+        <h1 style="margin-bottom: 1.8rem; font-size: 2.2rem; font-weight: 700">
+          Environment Management
+        </h1>
+
+        <div class="category-filter">
+          <button class="filter-btn dev active" data-category="all">All Environments</button>
+          <button class="filter-btn dev" data-category="dev">Development</button>
+          <button class="filter-btn qa" data-category="qa">Quality Assurance</button>
+          <button class="filter-btn prod" data-category="prod">Production</button>
+        </div>
+
+        <div class="grid" id="environments-grid">
+          <!-- Environments will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- Tools List View -->
+      <div id="tools-view" class="view">
+        <div class="tool-header">
+          <div class="tool-icon-large">
+            <img
+              src="https://bailian-bmp-pre.oss-cn-hangzhou.aliyuncs.com/public/system_agent/PlaceHolder.png"
+              alt="Tool"
+              style="width: 40px; height: 40px"
+            />
+          </div>
+          <div class="tool-info">
+            <h1>Tools for <span id="env-name" style="color: var(--primary)">ENV1</span></h1>
+            <p>Comprehensive suite of tools for environment management and monitoring</p>
+          </div>
+        </div>
+
+        <div class="grid" id="tools-grid">
+          <!-- Tools will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- Tool Detail View with Scope Sidebar and Service Mappings -->
+      <div id="tool-detail-view" class="view">
+        <div class="tool-header">
+          <div class="tool-icon-large">
+            <img
+              src="https://bailian-bmp-pre.oss-cn-hangzhou.aliyuncs.com/public/system_agent/PlaceHolder.png"
+              alt="Tool"
+              style="width: 40px; height: 40px"
+            />
+          </div>
+          <div class="tool-info">
+            <h1>
+              <span id="tool-detail-name" style="color: var(--primary)">SWAGGER</span> Management
+            </h1>
+            <p>
+              API documentation and testing for
+              <span id="tool-detail-env" style="color: var(--primary)">ENV1</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="tool-detail-container">
+          <div class="scopes-sidebar">
+            <div class="scopes-header">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                fill="currentColor"
+                class="bi bi-list"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"
+                />
+              </svg>
+              <h2>Available Scopes</h2>
+            </div>
+            <div class="scopes-search">
+              <input type="text" id="scope-search" placeholder="Search scopes..." />
+            </div>
+            <div class="scopes-list" id="scopes-list">
+              <!-- Scopes will be populated by JS -->
+            </div>
+          </div>
+
+          <div class="mappings-content">
+            <div class="mappings-header">
+              <h2>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  fill="currentColor"
+                  class="bi bi-table"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5 0v3h4V4zm5 4h4v3h-4zm0 4h4v3h-4z"
+                  />
+                </svg>
+                Service Mappings
+              </h2>
+              <div class="mappings-actions">
+                <button class="action-btn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    fill="currentColor"
+                    class="bi bi-search"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"
+                    />
+                  </svg>
+                  Search Services
+                </button>
+                <button class="action-btn">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    fill="currentColor"
+                    class="bi bi-download"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"
+                    />
+                    <path
+                      d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"
+                    />
+                  </svg>
+                  Export Data
+                </button>
+              </div>
+            </div>
+
+            <div class="scroll-container">
+              <div class="table-wrapper">
+                <div id="mappings-content-area">
+                  <div class="no-scope-selected">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="72"
+                      height="72"
+                      fill="currentColor"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        d="M4 10.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"
+                      />
+                      <path
+                        d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 12H2V3h12z"
+                      />
+                    </svg>
+                    <h3>Select a Scope</h3>
+                    <p>
+                      Click on a scope from the sidebar to view its detailed service mappings and
+                      configuration
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading-view" class="view" style="text-align: center; padding: 3rem 0">
+        <div class="loading">
+          <div class="loader"></div>
+          <div class="loading-text">Loading resources...</div>
+        </div>
+      </div>
+
+      <footer>Deployment Environment Management System • All rights reserved</footer>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Mock data generation with environment categories
+        const environments = [];
+        for (let i = 1; i <= 20; i++) {
+          let type, status, health;
+
+          if (i <= 8) {
+            type = "dev";
+            status = "Development";
+            health = Math.random() > 0.2 ? "status-active" : "status-warning";
+          } else if (i <= 15) {
+            type = "qa";
+            status = "Quality Assurance";
+            health = Math.random() > 0.1 ? "status-active" : "status-warning";
+          } else {
+            type = "prod";
+            status = "Production";
+            health = Math.random() > 0.05 ? "status-active" : "status-critical";
+          }
+
+          environments.push({
+            name: `env${i}`,
+            type,
+            status,
+            health,
+            lastUpdated: `${Math.floor(Math.random() * 30) + 1} min ago`,
+            servicesCount: Math.floor(Math.random() * 50) + 10,
+            toolCount: Math.floor(Math.random() * 10) + 7
+          });
+        }
+
+        const tools = [
+          {
+            name: "Swagger",
+            icon: "swagger",
+            description: "API documentation and testing platform for developers"
+          },
+          {
+            name: "Kibana",
+            icon: "kibana",
+            description: "Log visualization and analysis for real-time monitoring"
+          },
+          {
+            name: "Prometheus",
+            icon: "prometheus",
+            description: "Open-source monitoring and alerting toolkit"
+          },
+          {
+            name: "Grafana",
+            icon: "grafana",
+            description: "Metrics visualization and monitoring suite"
+          },
+          {
+            name: "Jenkins",
+            icon: "jenkins",
+            description: "Automation server for continuous integration and delivery"
+          },
+          {
+            name: "SonarQube",
+            icon: "sonarqube",
+            description: "Code quality and security analysis platform"
+          },
+          {
+            name: "Docker Hub",
+            icon: "docker",
+            description: "Container registry for storing and distributing container images"
+          },
+          {
+            name: "Kubernetes Dashboard",
+            icon: "kubernetes",
+            description: "Web-based UI for managing Kubernetes clusters"
+          },
+          {
+            name: "Argo CD",
+            icon: "argo",
+            description: "Declarative GitOps continuous delivery tool for Kubernetes"
+          },
+          { name: "Vault", icon: "vault", description: "Secrets management and data protection" },
+          { name: "Consul", icon: "consul", description: "Service discovery and configuration" },
+          { name: "Istio", icon: "istio", description: "Service mesh platform for microservices" },
+          { name: "Jaeger", icon: "jaeger", description: "End-to-end distributed tracing" },
+          { name: "Zipkin", icon: "zipkin", description: "Distributed tracing system" },
+          {
+            name: "Elasticsearch",
+            icon: "elasticsearch",
+            description: "Distributed search and analytics engine"
+          },
+          { name: "RabbitMQ", icon: "rabbitmq", description: "Open-source message broker" },
+          { name: "Redis", icon: "redis", description: "In-memory data structure store" }
+        ];
+
+        const scopes = Array.from({ length: 25 }, (_, i) => ({
+          id: `scope${i + 1}`,
+          name: `scope${i + 1}`,
+          servicesCount: Math.floor(Math.random() * 10) + 5,
+          lastUpdated: `${Math.floor(Math.random() * 60) + 1} min ago`,
+          endpointsCount: Math.floor(Math.random() * 15) + 5,
+          health: Math.random() > 0.1 ? "status-active" : "status-warning"
+        }));
+
+        // Generate random mappings for demo
+        const generateMappings = (scope) => {
+          const count = Math.floor(Math.random() * 8) + 5; // 5-12 services
+          return Array.from({ length: count }, (_, i) => {
+            const serviceTypes = [
+              "api",
+              "service",
+              "gateway",
+              "backend",
+              "frontend",
+              "worker",
+              "processor",
+              "scheduler"
+            ];
+            const randomType = serviceTypes[Math.floor(Math.random() * serviceTypes.length)];
+            const status = Math.random() > 0.1 ? "active" : "degraded";
+
+            return {
+              id: `svc-${Math.random().toString(36).substring(2, 8)}`,
+              service: `${randomType}-${i + 1}`,
+              link: `https://${scope}-service-${i + 1}.company.internal/api/v1`,
+              status: status,
+              lastUpdated: `${Math.floor(Math.random() * 60) + 1} min ago`,
+              version: `v${Math.floor(Math.random() * 3) + 1}.${Math.floor(
+                Math.random() * 10
+              )}.${Math.floor(Math.random() * 10)}`
+            };
+          });
+        };
+
+        // DOM elements
+        const views = {
+          environments: document.getElementById("environments-view"),
+          tools: document.getElementById("tools-view"),
+          toolDetail: document.getElementById("tool-detail-view"),
+          loading: document.getElementById("loading-view")
+        };
+
+        const breadcrumb = {
+          env: document.getElementById("breadcrumb-env"),
+          tool: document.getElementById("breadcrumb-tool"),
+          scope: document.getElementById("breadcrumb-scope"),
+          sep1: document.getElementById("sep1"),
+          sep2: document.getElementById("sep2")
+        };
+
+        const backBtn = document.getElementById("back-btn");
+        const environmentsGrid = document.getElementById("environments-grid");
+        const toolsGrid = document.getElementById("tools-grid");
+        const scopesList = document.getElementById("scopes-list");
+        const scopeSearch = document.getElementById("scope-search");
+        const mappingsContentArea = document.getElementById("mappings-content-area");
+        const envName = document.getElementById("env-name");
+        const toolDetailName = document.getElementById("tool-detail-name");
+        const toolDetailEnv = document.getElementById("tool-detail-env");
+
+        // Current state
+        let currentState = {
+          environment: null,
+          tool: null,
+          scope: null,
+          currentCategory: "all"
+        };
+
+        // Helper function to switch views
+        function showView(viewName) {
+          // Hide all views
+          Object.values(views).forEach((view) => {
+            view.classList.remove("active");
+            setTimeout(() => {
+              view.style.display = "none";
+            }, 500);
+          });
+
+          // Show loading briefly for UX
+          views.loading.style.display = "block";
+          views.loading.classList.add("active");
+
+          // After delay, show target view
+          setTimeout(() => {
+            views.loading.classList.remove("active");
+            setTimeout(() => {
+              views.loading.style.display = "none";
+              views[viewName].style.display = "block";
+              setTimeout(() => {
+                views[viewName].classList.add("active");
+              }, 50);
+            }, 300);
+          }, 400);
+
+          // Update back button
+          backBtn.style.display =
+            viewName === "environments" || viewName === "tools" ? "none" : "inline-flex";
+
+          // Update breadcrumb
+          updateBreadcrumb();
+        }
+
+        function updateBreadcrumb() {
+          const parts = ["environments"];
+          if (currentState.environment) parts.push("env");
+          if (currentState.tool) parts.push("tool");
+          if (currentState.scope) parts.push("scope");
+
+          // Reset all
+          breadcrumb.env.style.display = "none";
+          breadcrumb.tool.style.display = "none";
+          breadcrumb.scope.style.display = "none";
+          breadcrumb.sep1.style.display = "none";
+          breadcrumb.sep2.style.display = "none";
+
+          // Update based on state
+          if (currentState.environment) {
+            breadcrumb.env.textContent = currentState.environment.toUpperCase();
+            breadcrumb.env.style.display = "inline";
+            breadcrumb.sep1.style.display = "inline";
+
+            if (currentState.tool) {
+              breadcrumb.tool.textContent = currentState.tool.toUpperCase();
+              breadcrumb.tool.style.display = "inline";
+              breadcrumb.sep2.style.display = "inline";
+
+              if (currentState.scope) {
+                breadcrumb.scope.textContent = currentState.scope.toUpperCase();
+                breadcrumb.scope.style.display = "inline";
+              }
+            }
+          }
+        }
+
+        // Initialize environments grid with categories
+        function renderEnvironments() {
+          environmentsGrid.innerHTML = "";
+
+          // Filter environments based on current category
+          const filteredEnvs =
+            currentState.currentCategory === "all"
+              ? environments
+              : environments.filter((env) => env.type === currentState.currentCategory);
+
+          // Create environment cards
+          filteredEnvs.forEach((env) => {
+            const card = document.createElement("div");
+            card.className = `card ${env.type}`;
+            card.dataset.env = env.name;
+            card.innerHTML = `
+                        <div class="env-badge">${env.status.substring(0, 3).toUpperCase()}</div>
+                        <div class="card-header">
+                            <div class="card-title">
+                                <div class="card-icon">
+                                    <img src="https://bailian-bmp-pre.oss-cn-hangzhou.aliyuncs.com/public/system_agent/PlaceHolder.png" alt="Environment">
+                                </div>
+                                ${env.name.toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-description">
+                                ${env.status} environment with comprehensive tooling suite. 
+                                Configuration was last updated ${env.lastUpdated}.
+                            </div>
+                            <div class="card-footer">
+                                <div>
+                                    <span class="${
+                                      env.health === "status-active"
+                                        ? "status-active"
+                                        : env.health === "status-warning"
+                                        ? "status-warning"
+                                        : "status-critical"
+                                    } env-status">
+                                        ${
+                                          env.health === "status-active"
+                                            ? "Healthy"
+                                            : env.health === "status-warning"
+                                            ? "Warning"
+                                            : "Critical"
+                                        }
+                                    </span>
+                                </div>
+                                <div class="service-count">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                                        <path d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm6 10V5a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4z"/>
+                                    </svg>
+                                    ${env.servicesCount} Services
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            environmentsGrid.appendChild(card);
+          });
+
+          // Show "no results" if empty
+          if (filteredEnvs.length === 0) {
+            environmentsGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 2rem; color: #64748b;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-inbox" viewBox="0 0 16 16" style="margin-bottom: 1.8rem; opacity: 0.2; fill: var(--primary);">
+                                <path d="M8 6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v1a2 2 0 0 0 2 2 2 2 0 0 0 2-2zm0 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 2.25a.75.75 0 0 1 1.061-1.06L8 13.439l5.219-5.219a.75.75 0 1 1 1.06 1.06L8 14.561z"/>
+                            </svg>
+                            <h3 style="font-size: 1.8rem; color: #94a3b8; margin-bottom: 0.8rem;">No environments found</h3>
+                            <p style="font-size: 1.1rem; max-width: 500px; margin: 0 auto; line-height: 1.6; color: #94a3b8;">We couldn't find any environments matching your selected category. Try selecting a different environment category or check your filters.</p>
+                        </div>
+                    `;
+          }
+        }
+
+        // Render tools for selected environment
+        function renderTools() {
+          envName.textContent = currentState.environment.toUpperCase();
+          toolsGrid.innerHTML = "";
+
+          tools.forEach((tool) => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.dataset.tool = tool.name;
+            card.innerHTML = `
+                        <div class="card-header">
+                            <div class="card-title">
+                                <div class="card-icon">
+                                    <img src="https://bailian-bmp-pre.oss-cn-hangzhou.aliyuncs.com/public/system_agent/PlaceHolder.png" alt="${
+                                      tool.name
+                                    }">
+                                </div>
+                                ${tool.name}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-description">
+                                ${tool.description}
+                            </div>
+                            <div class="card-footer">
+                                <div>
+                                    <span class="status-active env-status">Operational</span>
+                                </div>
+                                <div class="service-count">
+                                    ${Math.floor(Math.random() * 15) + 5} Scopes
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            toolsGrid.appendChild(card);
+          });
+        }
+
+        // Render tool detail view with scopes sidebar
+        function renderToolDetail() {
+          toolDetailName.textContent = currentState.tool;
+          toolDetailEnv.textContent = currentState.environment.toUpperCase();
+
+          // Render scopes list
+          scopesList.innerHTML = "";
+          scopes.forEach((scope) => {
+            const scopeItem = document.createElement("div");
+            scopeItem.className = `scope-item ${scope.health}`;
+            scopeItem.dataset.scope = scope.id;
+            scopeItem.innerHTML = `
+                        <div class="scope-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                        </div>
+                        <div class="scope-details">
+                            <div class="scope-name">${scope.name.toUpperCase()}</div>
+                            <div class="scope-meta">
+                                <span><strong>${scope.servicesCount}</strong> services</span>
+                                <span><strong>${scope.endpointsCount}</strong> endpoints</span>
+                            </div>
+                        </div>
+                        <div class="scope-count">
+                            ${scope.servicesCount}
+                        </div>
+                    `;
+            scopesList.appendChild(scopeItem);
+          });
+
+          // Clear the mappings content area
+          mappingsContentArea.innerHTML = `
+                    <div class="no-scope-selected">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 10.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                            <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 12H2V3h12z"/>
+                        </svg>
+                        <h3>Select a Scope</h3>
+                        <p>Click on a scope from the sidebar to view its detailed service mappings and configuration</p>
+                    </div>
+                `;
+        }
+
+        // Render mappings for selected scope
+        function renderMappings(scope) {
+          const mappings = generateMappings(scope);
+
+          let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>SERVICE NAME</th>
+                                <th>STATUS</th>
+                                <th>VERSION</th>
+                                <th>ACCESS LINK</th>
+                                <th>LAST UPDATED</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+          mappings.forEach((mapping) => {
+            const statusClass = mapping.status === "active" ? "status-active" : "status-warning";
+            const statusText = mapping.status === "active" ? "Active" : "Degraded";
+            const statusIcon =
+              mapping.status === "active"
+                ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>'
+                : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>';
+
+            tableHTML += `
+                        <tr>
+                            <td style="font-weight: 500; color: var(--text-dark); display: flex; align-items: center; gap: 10px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-server" viewBox="0 0 16 16">
+                                    <path d="M5 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm6 10V5a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4z"/>
+                                </svg>
+                                ${mapping.service}
+                            </td>
+                            <td>
+                                <span class="${statusClass} env-status" style="display: inline-flex; align-items: center; gap: 6px;">
+                                    ${statusIcon} ${statusText}
+                                </span>
+                            </td>
+                            <td>
+                                <span style="background: rgba(0, 20, 220, 0.05); color: var(--primary); padding: 3px 10px; border-radius: 6px; font-size: 0.85rem;">
+                                    ${mapping.version}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="${mapping.link}" class="service-link" target="_blank">
+                                    ${mapping.link}
+                                </a>
+                            </td>
+                            <td>${mapping.lastUpdated}</td>
+                        </tr>
+                    `;
+          });
+
+          tableHTML += `
+                        </tbody>
+                    </table>
+                `;
+
+          mappingsContentArea.innerHTML = tableHTML;
+        }
+
+        // Event handlers
+        function setupEventListeners() {
+          // Breadcrumb navigation
+          document
+            .querySelector('.breadcrumb [data-view="environments"]')
+            .addEventListener("click", () => {
+              if (currentState.environment || currentState.tool || currentState.scope) {
+                currentState = {
+                  environment: null,
+                  tool: null,
+                  scope: null,
+                  currentCategory: "all"
+                };
+                document.querySelectorAll(".filter-btn").forEach((btn) => {
+                  btn.classList.remove("active");
+                });
+                document.querySelector(".filter-btn.dev").classList.add("active");
+                renderEnvironments();
+                showView("environments");
+              }
+            });
+
+          // Category filters
+          document.querySelectorAll(".filter-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              // Update active state
+              document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
+              btn.classList.add("active");
+
+              // Update current category
+              currentState.currentCategory = btn.dataset.category || "all";
+              renderEnvironments();
+            });
+          });
+
+          // Back button
+          backBtn.addEventListener("click", () => {
+            if (currentState.tool) {
+              currentState.tool = null;
+              showView("tools");
+              return;
+            } else if (currentState.environment) {
+              currentState.environment = null;
+              showView("environments");
+              return;
+            }
+          });
+
+          // Environments grid click
+          environmentsGrid.addEventListener("click", (e) => {
+            const card = e.target.closest(".card");
+            if (card && card.dataset.env) {
+              currentState.environment = card.dataset.env;
+              showView("tools");
+              setTimeout(renderTools, 400);
+            }
+          });
+
+          // Tools grid click
+          toolsGrid.addEventListener("click", (e) => {
+            const card = e.target.closest(".card");
+            if (card && card.dataset.tool) {
+              currentState.tool = card.dataset.tool;
+              showView("toolDetail");
+              setTimeout(renderToolDetail, 400);
+            }
+          });
+
+          // Scopes list click - THIS IS THE KEY PART
+          scopesList.addEventListener("click", (e) => {
+            const scopeItem = e.target.closest(".scope-item");
+            if (scopeItem && scopeItem.dataset.scope) {
+              // Remove active class from all scope items
+              document.querySelectorAll(".scope-item").forEach((item) => {
+                item.classList.remove("active");
+              });
+
+              // Add active class to clicked item
+              scopeItem.classList.add("active");
+
+              // Update state and render mappings
+              currentState.scope = scopeItem.dataset.scope;
+              renderMappings(currentState.scope);
+            }
+          });
+
+          // Scope search functionality
+          scopeSearch.addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll(".scope-item").forEach((item) => {
+              const scopeName = item.querySelector(".scope-name").textContent.toLowerCase();
+              if (scopeName.includes(searchTerm)) {
+                item.style.display = "flex";
+              } else {
+                item.style.display = "none";
+              }
+            });
+          });
+        }
+
+        // Initialize app
+        function init() {
+          renderEnvironments();
+          showView("environments");
+          setupEventListeners();
+
+          // Add initial highlight animation
+          setTimeout(() => {
+            const firstCard = environmentsGrid.querySelector(".card");
+            if (firstCard) {
+              firstCard.classList.add("highlight");
+              setTimeout(() => firstCard.classList.remove("highlight"), 3000);
+            }
+          }, 800);
+        }
+
+        // Start the app
+        init();
+      });
+    </script>
+  </body>
+</html>
