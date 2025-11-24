@@ -1,29 +1,38 @@
 const { chromium } = require("playwright");
 const os = require("os");
 const config = require("./config");
+const axios = require("axios");
+const https = require("https");
 
 async function sendData(data, type) {
-  console.log("Send: ", data);
+  const httpsAgent = new https.Agent({ rejectUnauthorized: false });
   if (type === "swagger") {
-    console.log("count: ", data.length);
+    console.log("count: ", data.data.length);
+    await axios.post(`${config.OPS_API}/ops-api/swagger`, data, { httpsAgent });
+  } else {
+    await axios.post(`${config.OPS_API}/ops-api/portal`, data, { httpsAgent });
   }
 }
 async function updateSwaggerInfo(chromiumPage, opsSwaggers) {
   console.log("opsSwaggers: ", opsSwaggers);
   let envSwagerData = [];
+  let curEnv = "";
   let isRunning = false;
   chromiumPage.on("response", async (response) => {
     if (response.url().includes("/routes?")) {
       try {
         const body = await response.body();
         const resp = JSON.parse(body.toString());
+        const origin = new URL(response.url()).origin;
         const swaggerData = resp.data
           .filter((i) => i.name.includes("-internal-") && i.expression.split("/").length <= 4)
           .map((it) => {
-            const origin = new URL(response.url()).origin;
             const host = (it.expression.match(/http\.host == "([^"]+)"/) || [])[1] || null;
-            const path = (it.expression.match(/http\.path \^= "([^"]+)"/) || [])[1] || null;
-            const swaggerUrl = `${origin}/${host}${path}/swagger`;
+            let path = (it.expression.match(/http\.path \^= "([^"]+)"/) || [])[1] || null;
+            if (path) {
+              path = path.replace(/\/$/, "");
+            }
+            const swaggerUrl = `${origin}/${host}${path}/swagger/`;
             return {
               serviceName: it.name.split(/\.|-internal-/)[1],
               scope: it.name.split(".")[0],
@@ -32,10 +41,12 @@ async function updateSwaggerInfo(chromiumPage, opsSwaggers) {
             };
           });
         envSwagerData.push(...swaggerData);
+        const sData = { env: curEnv, data: envSwagerData, updateAt: new Date().toISOString() };
         if (!resp.next) {
-          //   sendData(envSwagerData, "swagger");
+          await sendData(sData, "swagger");
           envSwagerData = [];
           isRunning = false;
+          curEnv = "";
         }
       } catch (error) {
         console.error("Failed to get content data from swagger:", error);
@@ -48,6 +59,7 @@ async function updateSwaggerInfo(chromiumPage, opsSwaggers) {
       await new Promise((resolve) => setTimeout(resolve, 100)); // Wait for 100ms before checking again
     }
     isRunning = true;
+    curEnv = item.id.split("_")[1];
     await chromiumPage.goto(item.url);
     console.log("item:", item);
   }
@@ -60,7 +72,7 @@ async function updateInfo(chromiumContext, opsPortalUrl) {
     chromiumContext.pages().length > 0
       ? chromiumContext.pages()[0]
       : await chromiumContext.newPage();
-  const pageSwagger = await chromiumContext.newPage();
+  let pageSwagger = null;
   page.on("response", async (response) => {
     if (response.url().includes("/portals")) {
       try {
@@ -71,6 +83,8 @@ async function updateInfo(chromiumContext, opsPortalUrl) {
           .filter((key) => !!opsData[key].Swagger?.url && key !== "15_lptest2_lpt")
           .map((k) => ({ id: k, url: opsData[k].Swagger.url }));
         await new Promise((resolve) => setTimeout(resolve, 10 * 1000));
+        pageSwagger?.close();
+        pageSwagger = await chromiumContext.newPage();
         await updateSwaggerInfo(pageSwagger, opsSwaggers);
       } catch (error) {
         console.error("Failed to get content data from ops portal:", error);
@@ -106,7 +120,7 @@ async function updateInfo(chromiumContext, opsPortalUrl) {
     } catch (error) {
       console.error("An error occurred during the refresh loop:", error);
     }
-  }, 2 * 60 * 1000); // 2 minutes in milliseconds
+  }, 5 * 60 * 1000); // 5 minutes in milliseconds
 }
 
 async function launchChromeContext() {
